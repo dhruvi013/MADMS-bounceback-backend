@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 from flask_mail import Mail
+from flask_session import Session
 from config import Config
 from otp_service import generate_otp, send_otp_email
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 
 # Configure logging
@@ -30,6 +31,14 @@ except Exception as e:
     raise
 
 CORS(app, origins=["http://localhost:8080"])  # Allow only your frontend
+
+# Flask Session Configuration
+app.config['SESSION_TYPE'] = 'filesystem'  # Store sessions in files (can be redis or database)
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True  # Prevent session tampering
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Auto-expire session after 30 minutes
+
+Session(app)
 
 # Hardcoded credentials - make sure these match what you're sending from frontend
 VALID_EMAIL = "dhruviben.patel119539@marwadiuniversity.ac.in"
@@ -98,7 +107,12 @@ def verify_otp():
 
         if stored_otp == otp:
             OTP_STORE.pop(email)  # Remove OTP after successful verification
-            logger.info(f"OTP verified successfully for {email}")
+            
+            # Start user session
+            session['user'] = email
+            session['last_active'] = timedelta(seconds=int(request.environ.get('werkzeug.request_time', 0)))  # Track user activity
+            
+            logger.info(f"OTP verified successfully for {email}, session started")
             return jsonify({"message": "OTP verified", "success": True}), 200
             
         logger.warning(f"Invalid OTP attempt for {email}")
@@ -106,6 +120,36 @@ def verify_otp():
     except Exception as e:
         logger.error(f"Error in OTP verification: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@app.route("/auth/logout", methods=["POST"])
+def logout():
+    session.clear()  # Clear session on logout
+    logger.info("User logged out, session cleared")
+    return jsonify({"message": "Logged out successfully"}), 200
+
+@app.route("/dashboard", methods=["GET"])
+def dashboard():
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized, please log in"}), 401
+    
+    return jsonify({"message": "Welcome to the Dashboard", "user": session['user']}), 200
+
+# Function to check session timeout and activity
+def is_session_expired():
+    if 'user' not in session:
+        return True  # No session found, must login
+    if 'last_active' in session:
+        inactive_time = timedelta(minutes=10)  # Auto logout after 10 mins of inactivity
+        if session['last_active'] + inactive_time < timedelta(seconds=int(request.environ.get('werkzeug.request_time', 0))):
+            session.clear()  # Clear session if inactive
+            return True
+    session['last_active'] = timedelta(seconds=int(request.environ.get('werkzeug.request_time', 0)))  # Update activity
+    return False
+
+@app.before_request
+def session_checker():
+    if request.endpoint in ['dashboard'] and is_session_expired():
+        return redirect(url_for('login'))  # Redirect to login if session expired
 
 if __name__ == "__main__":
     app.run(debug=True)
