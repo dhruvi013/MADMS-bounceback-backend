@@ -41,7 +41,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Auto-expire 
 Session(app)
 
 # Hardcoded credentials - make sure these match what you're sending from frontend
-VALID_EMAIL = "dhruviben.patel119539@marwadiuniversity.ac.in"
+VALID_EMAIL = "vidyasinha939@gmail.com"
 VALID_PASSWORD = "1234"
 OTP_STORE = {}  # Dictionary to store OTPs temporarily
 
