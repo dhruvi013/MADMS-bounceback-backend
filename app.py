@@ -72,7 +72,7 @@ Session(app)
 # Allowed emails and single password (for testing)
 ALLOWED_EMAILS = [
     "vidyasinha939@gmail.com",
-    "dhruviben.patel119539@marwadiuniversity.ac.in "
+    "dhruviben.patel119539@marwadiuniversity.ac.in"
 ]
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
