@@ -52,7 +52,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 # ✅ Correct CORS setup
 CORS(app, supports_credentials=True, origins=[
-    "http://localhost:8080"  
+    "http://localhost:8080"  # 👈 must match exactly!
 ])
 
 Session(app)
