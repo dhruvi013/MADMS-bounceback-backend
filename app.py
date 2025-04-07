@@ -71,7 +71,7 @@ Session(app)
 # Hardcoded credentials for testing
 # Allowed emails and single password (for testing)
 ALLOWED_EMAILS = [
-    "dhruviben.patel119539@marwadiuniversity.ac.in"
+    "dhruviben.patel119539@marwadiuniversity.ac.in",
     "vidyasinha939@gmail.com",
     "rajvi.dave119794@marwadiuniversity.ac.in"
 ]
