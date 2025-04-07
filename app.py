@@ -56,7 +56,7 @@ app.config['SESSION_TYPE'] = 'filesystem'  # Store session in server filesystem
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Crucial for localhost
-app.config['SESSION_COOKIE_SECURE'] = False    # False because not using HTTPS locally
+app.config['SESSION_COOKIE_SECURE'] = True    # False because not using HTTPS locally
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
