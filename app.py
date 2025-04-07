@@ -62,7 +62,8 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 # ✅ Correct CORS setup
 CORS(app, supports_credentials=True, origins=[
-    "http://localhost:8080"  # 👈 must match exactly!
+    "http://localhost:8080",  # Local development
+    "https://madms-bounceback.vercel.app"  # Production Vercel domain
 ])
 
 Session(app)
@@ -71,8 +72,7 @@ Session(app)
 # Allowed emails and single password (for testing)
 ALLOWED_EMAILS = [
     "vidyasinha939@gmail.com",
-    "vidyasinha939@gmail.com",
-    "example3@yahoo.com"
+    "dhruviben.patel119539@gmail.com"
 ]
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
