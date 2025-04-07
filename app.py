@@ -58,7 +58,12 @@ CORS(app, supports_credentials=True, origins=[
 Session(app)
 
 # Hardcoded credentials for testing
-VALID_EMAIL = "vidyasinha939@gmail.com"
+# Allowed emails and single password (for testing)
+ALLOWED_EMAILS = [
+    "vidyasinha939@gmail.com",
+    "vidyasinha939@gmail.com",
+    "example3@yahoo.com"
+]
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
 
@@ -72,7 +77,7 @@ def login():
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
 
-        if email == VALID_EMAIL and password == VALID_PASSWORD:
+        if email in ALLOWED_EMAILS and password == VALID_PASSWORD:
             otp = generate_otp()
             OTP_STORE[email] = otp
             send_otp_email(email, otp, mail)
