@@ -7,6 +7,7 @@ from otp_service import generate_otp, send_otp_email
 from datetime import timedelta, datetime
 import logging
 from supabase_client import supabase
+from controllers.student_controller import student_bp
 import os
 
 # Configure logging
@@ -14,6 +15,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Register the controller (Blueprint)
+app.register_blueprint(student_bp)
+
 
 # Load configuration
 try:
