@@ -71,8 +71,8 @@ Session(app)
 # Hardcoded credentials for testing
 # Allowed emails and single password (for testing)
 ALLOWED_EMAILS = [
+    "dhruviben.patel119539@marwadiuniversity.ac.in"
     "vidyasinha939@gmail.com",
-    "dhruviben.patel119539@marwadiuniversity.ac.in "
 ]
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
