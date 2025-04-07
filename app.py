@@ -41,19 +41,18 @@ except Exception as e:
     raise
 
 # ✅ Flask Session Configuration (fixed)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your_generated_secret_key')
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SECRET_KEY'] = 'your_generated_secret_key'  # Must not be None
+app.config['SESSION_TYPE'] = 'filesystem'  # Store session in server filesystem
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Required for cross-origin requests
-app.config['SESSION_COOKIE_SECURE'] = True     # Required for HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Crucial for localhost
+app.config['SESSION_COOKIE_SECURE'] = False    # False because not using HTTPS locally
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 # ✅ Correct CORS setup
 CORS(app, supports_credentials=True, origins=[
-    "https://madms-bounceback.vercel.app",  # Production frontend URL
-    "http://localhost:8080"  # Development URL
+    "http://localhost:8080"  # 👈 must match exactly!
 ])
 
 Session(app)
@@ -131,25 +130,17 @@ def submit_form():
         return response
 
     if 'user' not in session:
-        logger.error("Form submission attempted without valid session")
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
         data = request.json
-        if not data:
-            logger.error("Form submission received empty data")
-            return jsonify({"error": "No data provided"}), 400
-
-        logger.info(f"Attempting to submit form data for user: {session['user']}")
         # Save to Supabase
         response = supabase.table("students").insert(data).execute()
-        logger.info("Form data successfully saved to Supabase")
 
         return jsonify({"message": "Form submitted successfully", "response": response.data}), 200
     except Exception as e:
-        error_msg = str(e)
-        logger.error(f"Form submission error: {error_msg}")
-        return jsonify({"error": f"Failed to submit form: {error_msg}"}), 500
+        logger.error(f"Form submission error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 # ✅ Dashboard Route (test auth)
 @app.route("/dashboard", methods=["GET"])
