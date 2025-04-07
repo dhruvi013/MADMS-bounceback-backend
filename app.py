@@ -81,13 +81,13 @@ OTP_STORE = {}
 def login():
     try:
         data = request.json
-        email = data.get("email")
+        email = data.get("email", "").strip().lower()
         password = data.get("password")
 
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
 
-        if email in ALLOWED_EMAILS and password == VALID_PASSWORD:
+        if email in [e.strip().lower() for e in ALLOWED_EMAILS] and password == VALID_PASSWORD:
             otp = generate_otp()
             OTP_STORE[email] = otp
             send_otp_email(email, otp, mail)
