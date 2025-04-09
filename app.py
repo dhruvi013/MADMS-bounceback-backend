@@ -186,6 +186,58 @@ def session_checker():
 
         session['last_active'] = datetime.utcnow().timestamp()
 
+
+
+@app.route("/upload-documents", methods=["POST"])
+def upload_admission_docs():
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        student_id = request.form.get("student_id")
+        academic_year = request.form.get("academic_year")
+
+        # ✅ Check if student exists in the students table
+        student_check = supabase.table("students").select("id").eq("id", student_id).execute()
+        if not student_check.data:
+            return jsonify({"error": "Student not found"}), 400
+
+        # ✅ Check if admission already exists for this student_id
+        admission_check = supabase.table("student_admissions").select("id").eq("student_id", student_id).execute()
+        if admission_check.data:
+            return jsonify({"error": "Admission already submitted"}), 409
+
+        # ✅ Handle file uploads (store in Supabase Storage and get public URLs)
+        from services.supabase_service import upload_file_to_supabase
+
+        registration_form = request.files.get("registration_form")
+        tenth = request.files.get("tenth_marksheet")
+        twelfth = request.files.get("twelfth_marksheet")
+        gujcet = request.files.get("gujcet_marksheet")
+
+        reg_url = upload_file_to_supabase(registration_form, f"{student_id}_registration.pdf")
+        tenth_url = upload_file_to_supabase(tenth, f"{student_id}_tenth.pdf")
+        twelfth_url = upload_file_to_supabase(twelfth, f"{student_id}_twelfth.pdf")
+        gujcet_url = upload_file_to_supabase(gujcet, f"{student_id}_gujcet.pdf")
+
+        # ✅ Insert admission data into student_admissions table
+        # student_id here is a foreign key reference to students.id
+        supabase.table("student_admissions").insert({
+            "student_id": int(student_id),
+            "academic_year": academic_year,
+            "registration_form": reg_url,
+            "tenth_marksheet": tenth_url,
+            "twelfth_marksheet": twelfth_url,
+            "gujcet_marksheet": gujcet_url
+        }).execute()
+
+        return jsonify({"message": "Documents uploaded successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"Admission upload error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     # Use environment variables or default to production settings
     port = int(os.environ.get("PORT", 10000))
