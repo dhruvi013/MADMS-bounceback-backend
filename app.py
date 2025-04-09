@@ -139,8 +139,17 @@ def logout():
 
 
 
-@student_bp.route('/students/bulk', methods=['POST'])
+@student_bp.route('/students/bulk', methods=['POST', 'OPTIONS'])
 def bulk_add_students():
+    if request.method == 'OPTIONS':
+        # Preflight request, send back the CORS headers
+        response = jsonify({'message': 'CORS preflight success'})
+        response.headers.add('Access-Control-Allow-Origin', 'https://madms-assistant.vercel.app')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response, 200
+
     if 'user' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
