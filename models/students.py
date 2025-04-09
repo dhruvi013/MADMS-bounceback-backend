@@ -7,9 +7,15 @@ from sqlalchemy import Column, Integer, String, DateTime
 class Student(Base):
     __tablename__ = "students"
 
-    gr_no = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     enrollment_number = Column(String)
     student_type = Column(String)
     batch_period = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    gr_no = Column(String)
+    pcm = Column(String)  # ✅ If not, add this
+    tenth = Column(String)
+    twelfth = Column(String)
+    acpc = Column(String)
+    admission_quota = Column(String)
+    nationality = Column(String)
+    gender = Column(String)
