@@ -61,12 +61,12 @@ app.config['SESSION_COOKIE_SECURE'] = True    # False because not using HTTPS lo
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-# ✅ Correct CORS setup
-CORS(app, supports_credentials=True, origins=[
-    # "http://localhost:8080",  # Local development
-    # "https://madms-bounceback.vercel.app"  # Production Vercel domain
-    "*"
-])
+# # ✅ Correct CORS setup
+# CORS(app, supports_credentials=True, origins=[
+#     # "http://localhost:8080",  # Local development
+#     # "https://madms-bounceback.vercel.app"  # Production Vercel domain
+#     "*"
+# ])
 
 Session(app)
 
@@ -138,55 +138,6 @@ def logout():
     return jsonify({"message": "Logged out successfully"}), 200
 
 
-
-@student_bp.route('/submit-form', methods=['POST', 'OPTIONS'])
-def submit_form():
-    if request.method == 'OPTIONS':
-        # Preflight request, send back the CORS headers
-        response = jsonify({'message': 'CORS preflight success'})
-        response.headers.add('Access-Control-Allow-Origin', 'https://madms-assistant.vercel.app')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        return response, 200
-
-    if 'user' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    data = request.json
-    db = SessionLocal()
-
-    try:
-        students = []
-        for item in data:
-            student = Student(
-                name=item.get('name', ''),
-                enrollment_number=item.get('enrollment_number', ''),
-                student_type=item.get('student_type', ''),
-                batch_period=item.get('batch_period', ''),
-                gr_no=item.get('gr_no', ''),
-                pcm=item.get('pcm', ''),
-                tenth=item.get('tenth', ''),
-                twelfth=item.get('twelfth', ''),
-                acpc=item.get('acpc', ''),
-                admission_quota=item.get('admission_quota', ''),
-                nationality=item.get('nationality', ''),
-                gender=item.get('gender', ''),
-            )
-            students.append(student)
-
-        db.bulk_save_objects(students)
-        db.commit()
-
-        return jsonify({'message': f'{len(students)} students added successfully'}), 200
-
-    except Exception as e:
-        db.rollback()
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
-
-    finally:
-        db.close()
 
 
 # ✅ Dashboard Route (test auth)
