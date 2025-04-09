@@ -16,17 +16,17 @@ def upload_admission_docs():
 
     try:
         student_id = request.form.get("student_id")
-        academic_year = request.form.get("academic_year")
+        name = request.form.get("name")  # ✅ New field for renamed column
 
         if not student_id:
             return jsonify({"error": "Missing student_id"}), 400
-        
+
         try:
             student_id = int(student_id)
         except ValueError:
             return jsonify({"error": "student_id must be an integer"}), 400
 
-        # ✅ Check if student exists using student_id
+        # ✅ Check if student exists
         student_check = supabase.table("students").select("student_id").eq("student_id", student_id).execute()
         if not student_check.data:
             return jsonify({"error": "Student not found"}), 400
@@ -50,14 +50,14 @@ def upload_admission_docs():
         twelfth_url = upload_file_to_supabase(twelfth, f"{student_id}_twelfth.pdf")
         gujcet_url = upload_file_to_supabase(gujcet, f"{student_id}_gujcet.pdf")
 
-        # ✅ Insert into database
+        # ✅ Insert into Supabase
         supabase.table("student_admissions").insert({
             "student_id": student_id,
+            "name": name or "2024-2025",  # fallback if name not provided
             "registration_form": reg_url,
             "tenth_marksheet": tenth_url,
             "twelfth_marksheet": twelfth_url,
-            "gujcet_marksheet": gujcet_url,
-            # "academic_year": academic_year or "2024-2025"  # Optional default
+            "gujcet_marksheet": gujcet_url
         }).execute()
 
         return jsonify({"message": "Documents uploaded successfully"}), 200
