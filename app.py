@@ -9,6 +9,7 @@ import logging
 from supabase_client import supabase
 from controllers.student_controller import student_bp
 import os
+from controllers.enrollment_controller import upload_admission_docs
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -205,6 +206,12 @@ def session_checker():
             return jsonify({"error": "Session expired, please log in again"}), 401
 
         session['last_active'] = datetime.utcnow().timestamp()
+
+
+
+@app.route("/upload-documents", methods=["POST"])
+def handle_upload():
+    return upload_admission_docs()
 
 if __name__ == "__main__":
     # Use environment variables or default to production settings
