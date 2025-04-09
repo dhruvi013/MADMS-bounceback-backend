@@ -139,8 +139,8 @@ def logout():
 
 
 
-@student_bp.route('/students/bulk', methods=['POST', 'OPTIONS'])
-def bulk_add_students():
+@student_bp.route('/submit-form', methods=['POST', 'OPTIONS'])
+def submit_form():
     if request.method == 'OPTIONS':
         # Preflight request, send back the CORS headers
         response = jsonify({'message': 'CORS preflight success'})
