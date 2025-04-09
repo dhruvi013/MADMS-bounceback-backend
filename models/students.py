@@ -12,7 +12,7 @@ class Student(Base):
     student_type = Column(String)
     batch_period = Column(String)
     gr_no = Column(String)
-    pcm = Column(String)  # ✅ If not, add this
+    pcm = Column(Integer)  # ✅ If not, add this
     tenth = Column(String)
     twelfth = Column(String)
     acpc = Column(String)
