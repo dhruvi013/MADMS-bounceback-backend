@@ -18,6 +18,14 @@ def upload_admission_docs():
         student_id = request.form.get("student_id")
         academic_year = request.form.get("academic_year")
 
+        if not student_id:
+            return jsonify({"error": "Missing student_id"}), 400
+        
+        try:
+            student_id = int(student_id)
+        except ValueError:
+            return jsonify({"error": "student_id must be an integer"}), 400
+
         # ✅ Check if student exists using student_id
         student_check = supabase.table("students").select("student_id").eq("student_id", student_id).execute()
         if not student_check.data:
@@ -34,6 +42,9 @@ def upload_admission_docs():
         twelfth = request.files.get("twelfth_marksheet")
         gujcet = request.files.get("gujcet_marksheet")
 
+        if not all([registration_form, tenth, twelfth, gujcet]):
+            return jsonify({"error": "All documents must be uploaded"}), 400
+
         reg_url = upload_file_to_supabase(registration_form, f"{student_id}_registration.pdf")
         tenth_url = upload_file_to_supabase(tenth, f"{student_id}_tenth.pdf")
         twelfth_url = upload_file_to_supabase(twelfth, f"{student_id}_twelfth.pdf")
@@ -41,15 +52,16 @@ def upload_admission_docs():
 
         # ✅ Insert into database
         supabase.table("student_admissions").insert({
-            "student_id": int(student_id),
+            "student_id": student_id,
             "registration_form": reg_url,
             "tenth_marksheet": tenth_url,
             "twelfth_marksheet": twelfth_url,
-            "gujcet_marksheet": gujcet_url
+            "gujcet_marksheet": gujcet_url,
+            # "academic_year": academic_year or "2024-2025"  # Optional default
         }).execute()
 
         return jsonify({"message": "Documents uploaded successfully"}), 200
 
     except Exception as e:
         logger.error(f"Admission upload error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "Something went wrong on the server"}), 500
