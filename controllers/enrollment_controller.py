@@ -42,7 +42,6 @@ def upload_admission_docs():
         # ✅ Insert into database
         supabase.table("student_admissions").insert({
             "student_id": int(student_id),
-            "academic_year": academic_year,
             "registration_form": reg_url,
             "tenth_marksheet": tenth_url,
             "twelfth_marksheet": twelfth_url,
