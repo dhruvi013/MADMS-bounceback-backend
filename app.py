@@ -55,8 +55,8 @@ app.config['SECRET_KEY'] = 'your_generated_secret_key'  # Must not be None
 app.config['SESSION_TYPE'] = 'filesystem'  # Store session in server filesystem
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Crucial for localhost-LAX/None for globally
-app.config['SESSION_COOKIE_SECURE'] = True    # False because not using HTTPS locally/For render True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Crucial for localhost
+app.config['SESSION_COOKIE_SECURE'] = True    # False because not using HTTPS locally
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
@@ -74,7 +74,7 @@ Session(app)
 ALLOWED_EMAILS = [
     "dhruviben.patel119539@marwadiuniversity.ac.in",
     "vidyasinha939@gmail.com",
-    "rajvidave22@gmail.com"
+    "rajvi.dave119794@marwadiuniversity.ac.in"
 ]
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
@@ -136,28 +136,48 @@ def logout():
     session.clear()
     return jsonify({"message": "Logged out successfully"}), 200
 
-@app.route("/submit-form", methods=["POST", "OPTIONS"])
-def submit_form():
-    if request.method == "OPTIONS":
-        response = jsonify({})
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get("Origin"))
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-        return response
 
+
+@student_bp.route('/students/bulk', methods=['POST'])
+def bulk_add_students():
     if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json
+    db = SessionLocal()
 
     try:
-        data = request.json
-        # Save to Supabase
-        response = supabase.table("students").insert(data).execute()
+        students = []
+        for item in data:
+            student = Student(
+                name=item.get('name', ''),
+                enrollment_number=item.get('enrollment_number', ''),
+                student_type=item.get('student_type', ''),
+                batch_period=item.get('batch_period', ''),
+                gr_no=item.get('gr_no', ''),
+                pcm=item.get('pcm', ''),
+                tenth=item.get('tenth', ''),
+                twelfth=item.get('twelfth', ''),
+                acpc=item.get('acpc', ''),
+                admission_quota=item.get('admission_quota', ''),
+                nationality=item.get('nationality', ''),
+                gender=item.get('gender', ''),
+            )
+            students.append(student)
 
-        return jsonify({"message": "Form submitted successfully", "response": response.data}), 200
+        db.bulk_save_objects(students)
+        db.commit()
+
+        return jsonify({'message': f'{len(students)} students added successfully'}), 200
+
     except Exception as e:
-        logger.error(f"Form submission error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        db.rollback()
+        print(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        db.close()
+
 
 # ✅ Dashboard Route (test auth)
 @app.route("/dashboard", methods=["GET"])
@@ -185,58 +205,6 @@ def session_checker():
             return jsonify({"error": "Session expired, please log in again"}), 401
 
         session['last_active'] = datetime.utcnow().timestamp()
-
-
-
-@app.route("/upload-documents", methods=["POST"])
-def upload_admission_docs():
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    try:
-        student_id = request.form.get("student_id")
-        academic_year = request.form.get("academic_year")
-
-        # ✅ Check if student exists in the students table
-        student_check = supabase.table("students").select("id").eq("id", student_id).execute()
-        if not student_check.data:
-            return jsonify({"error": "Student not found"}), 400
-
-        # ✅ Check if admission already exists for this student_id
-        admission_check = supabase.table("student_admissions").select("id").eq("student_id", student_id).execute()
-        if admission_check.data:
-            return jsonify({"error": "Admission already submitted"}), 409
-
-        # ✅ Handle file uploads (store in Supabase Storage and get public URLs)
-        from services.supabase_service import upload_file_to_supabase
-
-        registration_form = request.files.get("registration_form")
-        tenth = request.files.get("tenth_marksheet")
-        twelfth = request.files.get("twelfth_marksheet")
-        gujcet = request.files.get("gujcet_marksheet")
-
-        reg_url = upload_file_to_supabase(registration_form, f"{student_id}_registration.pdf")
-        tenth_url = upload_file_to_supabase(tenth, f"{student_id}_tenth.pdf")
-        twelfth_url = upload_file_to_supabase(twelfth, f"{student_id}_twelfth.pdf")
-        gujcet_url = upload_file_to_supabase(gujcet, f"{student_id}_gujcet.pdf")
-
-        # ✅ Insert admission data into student_admissions table
-        # student_id here is a foreign key reference to students.id
-        supabase.table("student_admissions").insert({
-            "student_id": int(student_id),
-            "academic_year": academic_year,
-            "registration_form": reg_url,
-            "tenth_marksheet": tenth_url,
-            "twelfth_marksheet": twelfth_url,
-            "gujcet_marksheet": gujcet_url
-        }).execute()
-
-        return jsonify({"message": "Documents uploaded successfully"}), 200
-
-    except Exception as e:
-        logger.error(f"Admission upload error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
 
 if __name__ == "__main__":
     # Use environment variables or default to production settings

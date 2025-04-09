@@ -14,11 +14,18 @@ def add_student():
     db = SessionLocal()
     try:
         student = Student(
-            name=data['name'],
-            enrollment_number=data['enrollment_number'],
-            student_type=data['student_type'],
-            batch_period=data['batch_period'],
-            gr_no=data['gr_no']
+            name=data.get('name', ''),
+            enrollment_number=data.get('enrollment_number', ''),
+            student_type=data.get('student_type', ''),
+            batch_period=data.get('batch_period', ''),
+            gr_no=data.get('gr_no', ''),
+            pcm=data.get('pcm', ''),
+            tenth=data.get('tenth', ''),
+            twelfth=data.get('twelfth', ''),
+            acpc=data.get('acpc', ''),
+            admission_quota=data.get('admission_quota', ''),
+            nationality=data.get('nationality', ''),
+            gender=data.get('gender', '')
         )
         db.add(student)
         db.commit()
