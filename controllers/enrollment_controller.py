@@ -19,12 +19,11 @@ def upload_admission_docs():
         name = request.form.get("name")  # ✅ New field for renamed column
 
         if not enrollment_number:
-            return jsonify({"error": "Missing student_id"}), 400
+            return jsonify({"error": "Missing enrollment_number"}), 400
 
-        try:
-            enrollment_number = int(enrollment_number)
-        except ValueError:
-            return jsonify({"error": "student_id must be an integer"}), 400
+        enrollment_number = enrollment_number.strip()
+        if not enrollment_number:
+            return jsonify({"error": "Enrollment number is required"}), 400
 
         # ✅ Check if student exists
         student_check = supabase.table("students").select("enrollment_number").eq("enrollment_number", enrollment_number).execute()
