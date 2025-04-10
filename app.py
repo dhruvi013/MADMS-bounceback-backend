@@ -168,6 +168,11 @@ def session_checker():
         session['last_active'] = datetime.utcnow().timestamp()
 
 
+
+@app.route("/upload-documents", methods=["POST"])
+def handle_upload():
+    return upload_admission_docs()
+
 if __name__ == "__main__":
     # Use environment variables or default to production settings
     port = int(os.environ.get("PORT", 10000))
