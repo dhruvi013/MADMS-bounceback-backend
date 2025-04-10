@@ -1,4 +1,4 @@
-from flask import request, jsonify, session
+from flask import request, jsonify, session, Blueprint
 from services.supabase_service import upload_file_to_supabase
 from supabase import create_client
 import os
@@ -6,6 +6,8 @@ import logging
 from flask import current_app as app
 
 logger = logging.getLogger(__name__)
+
+enrollment_bp = Blueprint("enrollment", __name__)
 
 url = "https://hagfxtawcqlejisrlato.supabase.co"
 key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhZ2Z4dGF3Y3FsZWppc3JsYXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3ODE3NDIsImV4cCI6MjA1NzM1Nzc0Mn0.UxsVfpzvKRVAYi--ngdrogY3CjOiB9Yz60DeNTcvDa0"
@@ -68,6 +70,6 @@ def upload_admission_docs():
         logger.error(f"Admission upload error: {str(e)}")
         return jsonify({"error": "Something went wrong on the server"}), 500
 
-@app.route("/upload-documents", methods=["POST"])
+@enrollment_bp.route("/upload-documents", methods=["POST"])
 def handle_upload():
     return upload_admission_docs()

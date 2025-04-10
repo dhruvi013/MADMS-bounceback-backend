@@ -8,6 +8,7 @@ from datetime import timedelta, datetime
 import logging
 from supabase_client import supabase
 from controllers.student_controller import student_bp
+from controllers.enrollment_controller import enrollment_bp
 import os
 # from controllers.enrollment_controller import upload_admission_docs
 
@@ -29,6 +30,7 @@ CORS(app, resources={
 
 # Register the controller (Blueprint)
 app.register_blueprint(student_bp)
+app.register_blueprint(enrollment_bp)
 
 
 # Load configuration
