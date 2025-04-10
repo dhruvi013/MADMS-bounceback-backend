@@ -9,7 +9,7 @@ import logging
 from supabase_client import supabase
 from controllers.student_controller import student_bp
 import os
-from controllers.enrollment_controller import upload_admission_docs
+# from controllers.enrollment_controller import upload_admission_docs
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
