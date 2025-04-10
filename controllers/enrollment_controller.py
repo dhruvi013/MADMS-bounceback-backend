@@ -31,8 +31,10 @@ def upload_admission_docs():
             return jsonify({"error": "Student not found"}), 400
 
         # ✅ Check for duplicate admission
-        admission_check = supabase.table("student_admissions").select("enrollment_number").eq("enrollment_number", enrollment_number).execute()
-        if admission_check.data:
+        print(f"[DEBUG] enrollment_number received: '{enrollment_number}'")
+        student_check = supabase.table("students").select("enrollment_number").eq("enrollment_number", enrollment_number).execute()
+        print(f"[DEBUG] Supabase query result: {student_check.data}")
+        if student_check.data:
             return jsonify({"error": "Admission already submitted"}), 409
 
         # ✅ Handle file uploads
