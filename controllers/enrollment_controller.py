@@ -3,6 +3,7 @@ from services.supabase_service import upload_file_to_supabase
 from supabase import create_client
 import os
 import logging
+from flask import current_app as app
 
 logger = logging.getLogger(__name__)
 
@@ -66,3 +67,7 @@ def upload_admission_docs():
     except Exception as e:
         logger.error(f"Admission upload error: {str(e)}")
         return jsonify({"error": "Something went wrong on the server"}), 500
+
+@app.route("/upload-documents", methods=["POST"])
+def handle_upload():
+    return upload_admission_docs()
