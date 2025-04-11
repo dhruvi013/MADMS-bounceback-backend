@@ -10,7 +10,11 @@ def submit_form():
     if request.method == 'OPTIONS':
         # Preflight request, send back the CORS headers
         response = jsonify({'message': 'CORS preflight success'})
-        response.headers.add('Access-Control-Allow-Origin', 'https://madms-assistant.vercel.app')
+        # Get the origin from the request
+        origin = request.headers.get('Origin', '')
+        # Allow both localhost and production domains
+        if origin in ['http://localhost:8080', 'https://madms-assistant.vercel.app']:
+            response.headers.add('Access-Control-Allow-Origin', origin)
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
@@ -55,8 +59,21 @@ def submit_form():
         db.close()
 
 
-@student_bp.route('/student/search', methods=['GET'])
+@student_bp.route('/student/search', methods=['GET', 'OPTIONS'])
 def search_students():
+    if request.method == 'OPTIONS':
+        # Preflight request, send back the CORS headers
+        response = jsonify({'message': 'CORS preflight success'})
+        # Get the origin from the request
+        origin = request.headers.get('Origin', '')
+        # Allow both localhost and production domains
+        if origin in ['http://localhost:8080', 'https://madms-assistant.vercel.app']:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        return response, 200
+
     if 'user' not in session:
         print("❌ Unauthorized access to search")
         return jsonify({'error': 'Unauthorized'}), 401
@@ -66,7 +83,7 @@ def search_students():
     db = SessionLocal()
     try:
         students = db.query(Student).filter(
-            (Student.name.ilike(f'{query}%')) | 
+            (Student.name.ilike(f'{query}%')) |
             (Student.enrollment_number.ilike(f'{query}%'))
         ).all()
 

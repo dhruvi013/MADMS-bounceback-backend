@@ -10,6 +10,10 @@ from supabase_client import supabase
 from controllers.student_controller import student_bp
 import os
 from controllers.enrollment_controller import upload_admission_docs
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -129,8 +133,8 @@ def verify_otp():
     except Exception as e:
         logger.error(f"OTP verification error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 
 @app.route("/auth/logout", methods=["POST"])
 def logout():
@@ -169,11 +173,29 @@ def session_checker():
 
 
 
-@app.route("/upload-documents", methods=["POST"])
+@app.route("/upload-documents", methods=["POST", "OPTIONS"])
 def handle_upload():
+    if request.method == "OPTIONS":
+        # Preflight request, send back the CORS headers
+        response = jsonify({'message': 'CORS preflight success'})
+        # Get the origin from the request
+        origin = request.headers.get('Origin', '')
+        # Allow both localhost and production domains
+        if origin in ['http://localhost:8080', 'https://madms-assistant.vercel.app']:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response, 200
+
     return upload_admission_docs()
 
 if __name__ == "__main__":
-    # Use environment variables or default to production settings
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    # Development will be the default when running locally
+    env = os.environ.get("FLASK_ENV", "development")
+
+    if env == "development":
+        app.run(host="localhost", port=5000, debug=True)
+    else:
+        port = int(os.environ.get("PORT", 10000))
+        app.run(host="0.0.0.0", port=port)

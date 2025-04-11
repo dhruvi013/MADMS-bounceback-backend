@@ -11,6 +11,7 @@ key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhh
 supabase = create_client(url, key)
 
 def upload_admission_docs():
+    # CORS headers are now handled in the app.py route handler
     if 'user' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
