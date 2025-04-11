@@ -8,8 +8,9 @@ from datetime import timedelta, datetime
 import logging
 from supabase_client import supabase
 from controllers.student_controller import student_bp
+from controllers.enrollment_controller import enrollment_bp
 import os
-from controllers.enrollment_controller import upload_admission_docs
+# from controllers.enrollment_controller import upload_admission_docs
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -33,6 +34,7 @@ CORS(app, resources={
 
 # Register the controller (Blueprint)
 app.register_blueprint(student_bp)
+app.register_blueprint(enrollment_bp)
 
 
 # Load configuration
@@ -171,24 +173,6 @@ def session_checker():
 
         session['last_active'] = datetime.utcnow().timestamp()
 
-
-
-@app.route("/upload-documents", methods=["POST", "OPTIONS"])
-def handle_upload():
-    if request.method == "OPTIONS":
-        # Preflight request, send back the CORS headers
-        response = jsonify({'message': 'CORS preflight success'})
-        # Get the origin from the request
-        origin = request.headers.get('Origin', '')
-        # Allow both localhost and production domains
-        if origin in ['http://localhost:8080', 'https://madms-assistant.vercel.app']:
-            response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        return response, 200
-
-    return upload_admission_docs()
 
 if __name__ == "__main__":
     # Development will be the default when running locally
