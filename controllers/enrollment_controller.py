@@ -53,7 +53,13 @@ def upload_admission_docs():
         tenth_url = upload_file_to_supabase(tenth, f"{enrollment_number}_tenth.pdf")
         twelfth_url = upload_file_to_supabase(twelfth, f"{enrollment_number}_twelfth.pdf")
         gujcet_url = upload_file_to_supabase(gujcet, f"{enrollment_number}_gujcet.pdf")
-
+        logger.info("enrollment_number", enrollment_number,
+            "name", name,  # fallback if name not provided
+            "registration_form",reg_url,
+            "tenth_marksheet", tenth_url,
+            "twelfth_marksheet", twelfth_url,
+            "gujcet_marksheet", gujcet_url
+)
         # ✅ Insert into Supabase
         supabase.table("student_admissions").insert({
             "enrollment_number": enrollment_number,
