@@ -6,7 +6,7 @@ from supabase import create_client
 import os
 import logging
 from flask import current_app as app
-from tenacity import retry, stop_after_attempt, wait_exponential
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ url = "https://hagfxtawcqlejisrlato.supabase.co"
 key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhZ2Z4dGF3Y3FsZWppc3JsYXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3ODE3NDIsImV4cCI6MjA1NzM1Nzc0Mn0.UxsVfpzvKRVAYi--ngdrogY3CjOiB9Yz60DeNTcvDa0"
 
 # Initialize Supabase client with retry mechanism
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+# @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
 def init_supabase():
     try:
         return create_client(url, key)
