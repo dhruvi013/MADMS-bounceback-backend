@@ -73,13 +73,13 @@ Session(app)
 ALLOWED_EMAILS = [
     "dhruviben.patel119539@marwadiuniversity.ac.in",
     "vidyasinha939@gmail.com",
-    "rajvi.dave119794@marwadiuniversity.ac.in"
+    "rajvi.dave119704@marwadiuniversity.ac.in"
 ]
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
 
 @app.route("/auth/login", methods=["POST"])
-def login():
+def login():    
     try:
         data = request.json
         email = data.get("email", "").strip().lower()
