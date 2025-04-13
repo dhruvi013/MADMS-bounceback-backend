@@ -8,7 +8,13 @@ from datetime import timedelta, datetime
 import logging
 from supabase_client import supabase
 from controllers.student_controller import student_bp
+from controllers.enrollment_controller import enrollment_bp
 import os
+# from controllers.enrollment_controller import upload_admission_docs
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,7 +25,7 @@ app = Flask(__name__)
 # Configure CORS
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:8080", "https://madms-bounceback.vercel.app"],
+        "origins": ["http://localhost:8080", "https://madms-assistant.vercel.app"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
@@ -28,6 +34,7 @@ CORS(app, resources={
 
 # Register the controller (Blueprint)
 app.register_blueprint(student_bp)
+app.register_blueprint(enrollment_bp)
 
 
 # Load configuration
@@ -60,11 +67,12 @@ app.config['SESSION_COOKIE_SECURE'] = True    # False because not using HTTPS lo
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-# ✅ Correct CORS setup
-CORS(app, supports_credentials=True, origins=[
-    "http://localhost:8080",  # Local development
-    "https://madms-bounceback.vercel.app"  # Production Vercel domain
-])
+# # ✅ Correct CORS setup
+# CORS(app, supports_credentials=True, origins=[
+#     # "http://localhost:8080",  # Local development
+#     # "https://madms-bounceback.vercel.app"  # Production Vercel domain
+#     "*"
+# ])
 
 Session(app)
 
@@ -127,36 +135,16 @@ def verify_otp():
     except Exception as e:
         logger.error(f"OTP verification error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 
 @app.route("/auth/logout", methods=["POST"])
 def logout():
     session.clear()
     return jsonify({"message": "Logged out successfully"}), 200
 
-@app.route("/submit-form", methods=["POST", "OPTIONS"])
-def submit_form():
-    if request.method == "OPTIONS":
-        response = jsonify({})
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get("Origin"))
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-        return response
 
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
 
-    try:
-        data = request.json
-        # Save to Supabase
-        response = supabase.table("students").insert(data).execute()
-
-        return jsonify({"message": "Form submitted successfully", "response": response.data}), 200
-    except Exception as e:
-        logger.error(f"Form submission error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
 
 # ✅ Dashboard Route (test auth)
 @app.route("/dashboard", methods=["GET"])
@@ -185,7 +173,13 @@ def session_checker():
 
         session['last_active'] = datetime.utcnow().timestamp()
 
+
 if __name__ == "__main__":
-    # Use environment variables or default to production settings
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    # Development will be the default when running locally
+    env = os.environ.get("FLASK_ENV", "development")
+
+    if env == "development":
+        app.run(host="localhost", port=5000, debug=True)
+    else:
+        port = int(os.environ.get("PORT", 10000))
+        app.run(host="0.0.0.0", port=port)

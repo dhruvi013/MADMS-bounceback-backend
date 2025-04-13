@@ -6,10 +6,16 @@ from sqlalchemy import Column, Integer, String, DateTime
 
 class Student(Base):
     __tablename__ = "students"
-
-    gr_no = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     enrollment_number = Column(String)
     student_type = Column(String)
     batch_period = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    gr_no = Column(Integer)
+    pcm = Column(Integer)  # ✅ If not, add this
+    tenth = Column(Integer)
+    twelfth = Column(Integer)
+    acpc = Column(String)
+    admission_quota = Column(String)
+    nationality = Column(String)
+    gender = Column(String)
