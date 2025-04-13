@@ -59,14 +59,51 @@ def submit_form():
         db.close()
 
 
+# @student_bp.route('/student/search', methods=['GET', 'OPTIONS'])
+# def search_students():
+#     if request.method == 'OPTIONS':
+#         # Preflight request, send back the CORS headers
+#         response = jsonify({'message': 'CORS preflight success'})
+#         origin = request.headers.get('Origin', '')
+#         if origin in ['http://localhost:8080', 'https://madms-assistant.vercel.app']:
+#             response.headers.add('Access-Control-Allow-Origin', origin)
+#         response.headers.add('Access-Control-Allow-Credentials', 'true')
+#         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+#         response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+#         return response, 200
+
+#     if 'user' not in session:
+#         print("❌ Unauthorized access to search")
+#         return jsonify({'error': 'Unauthorized'}), 401
+
+#     query = request.args.get('q', '').strip().lower()
+#     print("🔍 Searching students with query:", query)
+#     db = SessionLocal()
+#     try:
+#         if query.isdigit():
+#             # Only search and fetch enrollment_number
+#             results = db.query(Student.enrollment_number).filter(
+#                 Student.enrollment_number.ilike(f'{query}%')
+#             ).all()
+#         else:
+#             # Name queries are ignored as per your new requirement
+#             results = []
+
+#         print(f"✅ Found {len(results)} enrollment numbers")
+#         enrollment_list = [{'enrollment_number': r.enrollment_number} for r in results]
+#         return jsonify(enrollment_list), 200
+#     except Exception as e:
+#         print("💥 Error in search_students:", e)
+#         traceback.print_exc()
+#         return jsonify({'error': str(e)}), 500
+#     finally:
+#         db.close()
+
 @student_bp.route('/student/search', methods=['GET', 'OPTIONS'])
 def search_students():
     if request.method == 'OPTIONS':
-        # Preflight request, send back the CORS headers
         response = jsonify({'message': 'CORS preflight success'})
-        # Get the origin from the request
         origin = request.headers.get('Origin', '')
-        # Allow both localhost and production domains
         if origin in ['http://localhost:8080', 'https://madms-assistant.vercel.app']:
             response.headers.add('Access-Control-Allow-Origin', origin)
         response.headers.add('Access-Control-Allow-Credentials', 'true')
@@ -75,29 +112,19 @@ def search_students():
         return response, 200
 
     if 'user' not in session:
-        print("❌ Unauthorized access to search")
         return jsonify({'error': 'Unauthorized'}), 401
 
     query = request.args.get('q', '').strip().lower()
-    print("🔍 Searching students with query:", query)
     db = SessionLocal()
     try:
-        students = db.query(Student).filter(
-            (Student.name.ilike(f'{query}%')) |
-            (Student.enrollment_number.ilike(f'{query}%'))
+        # Only search and fetch enrollment_number
+        results = db.query(Student.enrollment_number).filter(
+        Student.enrollment_number.ilike(f'{query}%')
         ).all()
 
-        print(f"✅ Found {len(students)} students")
-        results = [
-            {
-                'name': student.name,
-                'enrollment_number': student.enrollment_number
-            } for student in students
-        ]
-        return jsonify(results), 200
+        enrollment_list = [{'enrollment_number': r.enrollment_number} for r in results]
+        return jsonify(enrollment_list), 200
     except Exception as e:
-        print("💥 Error in search_students:", e)
-        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()

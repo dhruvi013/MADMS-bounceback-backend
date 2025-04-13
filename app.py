@@ -34,8 +34,7 @@ CORS(app, resources={
 
 # Register the controller (Blueprint)
 app.register_blueprint(student_bp)
-app.register_blueprint(enrollment_bp)
-
+app.register_blueprint(enrollment_bp, url_prefix='/enrollment')
 
 # Load configuration
 try:
