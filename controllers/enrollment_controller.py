@@ -3,14 +3,14 @@ from supabase import create_client
 import logging
 from flask import Blueprint
 
-app = Flask(__name__)
-app.secret_key = "supersecretkey"  # required for session
+# app = Flask(__name__)
+# app.secret_key = "supersecretkey"  # required for session
 
 enrollment_bp = Blueprint("enrollment", __name__)
 
 # Supabase setup
 url = "https://hagfxtawcqlejisrlato.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhZ2Z4dGF3Y3FsZWppc3JsYXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3ODE3NDIsImV4cCI6MjA1NzM1Nzc0Mn0.UxsVfpzvKRVAYi--ngdrogY3CjOiB9Yz60DeNTcvDa0"  # Replace with your key
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhZ2Z4dGF3Y3FsZWppc3JsYXRvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTc4MTc0MiwiZXhwIjoyMDU3MzU3NzQyfQ.46lZ3y9-gFwbYqZpuXbcEEN2xCVUSOHdjNae4WST3vg"
 supabase = create_client(url, key)
 
 # Enable logging
@@ -19,21 +19,33 @@ logger = logging.getLogger(__name__)
 
 # Upload function
 def upload_file_to_supabase(file, filename):
-    bucket_name = "enrollment-upload"  # ✅ Make sure this matches exactly
+    bucket_name = "enrollment-upload"
 
-    file.seek(0)  # Ensure pointer is at the start
-    response = supabase.storage.from_(bucket_name).upload(filename, file, {
-        "content-type": file.content_type,
-        "upsert": True  # allows overwriting
-    })
+    file.seek(0)
+    file_bytes = file.read()
+    content_type = file.content_type or "application/pdf"
 
-    if response.get("error"):
-        raise Exception(response["error"]["message"])
+    try:
+        response = supabase.storage.from_(bucket_name).upload(
+            filename,
+            file_bytes,
+            {
+                "content-type": content_type,
+                "x-upsert": "true"
+            }
+        )
 
-    public_url = supabase.storage.from_(bucket_name).get_public_url(filename)
-    return public_url
+        # Supabase returns an UploadResponse object — treat that as success
+        if not response or not hasattr(response, "path"):
+            raise Exception(f"Unexpected response from Supabase: {response}")
 
-@app.route("/upload-documents", methods=["POST"])
+        # Return the public URL
+        return supabase.storage.from_(bucket_name).get_public_url(filename)
+
+    except Exception as e:
+        raise Exception(f"Upload to Supabase failed: {str(e)}")
+
+@enrollment_bp.route("/upload-documents", methods=["POST"])
 def upload_admission_docs():
     # Dummy session check for demo
     session['user'] = 'dhruvi@example.com'  # remove in production
@@ -71,14 +83,16 @@ def upload_admission_docs():
             "gujcet_marksheet": gujcet_url
         }).execute()
 
-        if insert_response.get("error"):
-            raise Exception(insert_response["error"]["message"])
+        if getattr(insert_response, "error", None):
+            raise Exception(insert_response.error.message)
+
+        return jsonify({"message": "Documents uploaded successfully"}), 200
 
         return jsonify({"message": "Documents uploaded successfully"}), 200
 
     except Exception as e:
         logger.error(f"Upload failed: {str(e)}")
-        return jsonify({"error": "Something went wrong on the server"}), 500
+        return jsonify({"error": str(e)}), 500  # return full error message
 
 if __name__ == "__main__":
     app.run(debug=True)
