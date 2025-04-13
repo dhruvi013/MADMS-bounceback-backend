@@ -49,7 +49,7 @@ def upload_file_to_supabase(file, filename):
 @enrollment_bp.route("/upload-documents", methods=["POST"])
 def upload_admission_docs():
     # Dummy session check for demo
-    session['user'] = 'dhruvi@example.com'  # remove in production
+    session['user'] = 'vidyasinha939@gmail.com'  # remove in production
     if 'user' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
