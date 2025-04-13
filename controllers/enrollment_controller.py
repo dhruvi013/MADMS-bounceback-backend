@@ -1,80 +1,99 @@
 import re
-from flask import request, jsonify, session, Blueprint
-from services.supabase_service import upload_file_to_supabase
+from flask import Flask, request, jsonify, session
 from supabase import create_client
-import os
 import logging
-from flask import current_app as app
+from flask import Blueprint
 
-logger = logging.getLogger(__name__)
+# app = Flask(__name__)
+# app.secret_key = "supersecretkey"  # required for session
 
 enrollment_bp = Blueprint("enrollment", __name__)
 
+# Supabase setup
 url = "https://hagfxtawcqlejisrlato.supabase.co"
-key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhZ2Z4dGF3Y3FsZWppc3JsYXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3ODE3NDIsImV4cCI6MjA1NzM1Nzc0Mn0.UxsVfpzvKRVAYi--ngdrogY3CjOiB9Yz60DeNTcvDa0"
+key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhhZ2Z4dGF3Y3FsZWppc3JsYXRvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTc4MTc0MiwiZXhwIjoyMDU3MzU3NzQyfQ.46lZ3y9-gFwbYqZpuXbcEEN2xCVUSOHdjNae4WST3vg"
 supabase = create_client(url, key)
 
+# Enable logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Upload function
+def upload_file_to_supabase(file, filename):
+    bucket_name = "enrollment-upload"
+
+    file.seek(0)
+    file_bytes = file.read()
+    content_type = file.content_type or "application/pdf"
+
+    try:
+        response = supabase.storage.from_(bucket_name).upload(
+            filename,
+            file_bytes,
+            {
+                "content-type": content_type,
+                "x-upsert": "true"
+            }
+        )
+
+        # Supabase returns an UploadResponse object — treat that as success
+        if not response or not hasattr(response, "path"):
+            raise Exception(f"Unexpected response from Supabase: {response}")
+
+        # Return the public URL
+        return supabase.storage.from_(bucket_name).get_public_url(filename)
+
+    except Exception as e:
+        raise Exception(f"Upload to Supabase failed: {str(e)}")
+
+@enrollment_bp.route("/upload-documents", methods=["POST"])
 def upload_admission_docs():
+    # Dummy session check for demo
+    session['user'] = 'dhruvi@example.com'  # remove in production
     if 'user' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # Get form data
         enrollment_number = request.form.get("enrollment_number", "").strip()
-        name = request.form.get("name", "").strip()
-
         if not enrollment_number:
             return jsonify({"error": "Enrollment number is required"}), 400
 
-        # 1. First find student by exact enrollment number match
-        student_query = supabase.table("students") \
-            .select("*") \
-            .eq("enrollment_number", enrollment_number) \
-            .execute()
-        
-        logger.info(f"[DEBUG] Student query result: {student_query.data}")
+        # Get files from form
+        registration_form = request.files.get("registration_form")
+        tenth = request.files.get("tenth_marksheet")
+        twelfth = request.files.get("twelfth_marksheet")
+        gujcet = request.files.get("gujcet_marksheet")
 
-        if not student_query.data:
-            return jsonify({"error": "Student not found with this enrollment number"}), 404
-
-        # 2. Check for existing admission
-        duplicate_check = supabase.table("student_admissions") \
-            .select("enrollment_number") \
-            .eq("enrollment_number", enrollment_number) \
-            .execute()
-            
-        if duplicate_check.data:
-            return jsonify({"error": "Admission already submitted for this enrollment number"}), 409
-
-        # 3. Validate all documents
-        required_files = ["registration_form", "tenth_marksheet", 
-                         "twelfth_marksheet", "gujcet_marksheet"]
-        files = {key: request.files.get(key) for key in required_files}
-        
-        if any(not file for file in files.values()):
+        if not all([registration_form, tenth, twelfth, gujcet]):
             return jsonify({"error": "All documents must be uploaded"}), 400
 
-        # 4. Upload files
-        file_urls = {}
-        for file_key, file in files.items():
-            filename = f"{enrollment_number}_{file_key}.pdf"
-            file_urls[file_key] = upload_file_to_supabase(file, filename)
+        # Upload each file and get public URL
+        reg_url = upload_file_to_supabase(registration_form, f"{enrollment_number}_registration.pdf")
+        tenth_url = upload_file_to_supabase(tenth, f"{enrollment_number}_tenth.pdf")
+        twelfth_url = upload_file_to_supabase(twelfth, f"{enrollment_number}_twelfth.pdf")
+        gujcet_url = upload_file_to_supabase(gujcet, f"{enrollment_number}_gujcet.pdf")
 
-        # 5. Create admission record
-        admission_data = {
+        logger.info(f"Uploaded documents for {enrollment_number}")
+
+        # Insert into Supabase table
+        insert_response = supabase.table("student_admissions").insert({
             "enrollment_number": enrollment_number,
-            "name": name,
-            **file_urls
-        }
-        
-        supabase.table("student_admissions").insert(admission_data).execute()
+            "registration_form": reg_url,
+            "tenth_marksheet": tenth_url,
+            "twelfth_marksheet": twelfth_url,
+            "gujcet_marksheet": gujcet_url
+        }).execute()
+
+        if getattr(insert_response, "error", None):
+            raise Exception(insert_response.error.message)
+
+        return jsonify({"message": "Documents uploaded successfully"}), 200
 
         return jsonify({"message": "Documents uploaded successfully"}), 200
 
     except Exception as e:
-        logger.error(f"Admission upload error: {str(e)}", exc_info=True)
-        return jsonify({"error": "Server error processing your request"}), 500
+        logger.error(f"Upload failed: {str(e)}")
+        return jsonify({"error": str(e)}), 500  # return full error message
 
-@enrollment_bp.route("/upload-documents", methods=["POST"])
-def handle_upload():
-    return upload_admission_docs()
+if __name__ == "__main__":
+    app.run(debug=True)
