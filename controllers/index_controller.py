@@ -1,7 +1,10 @@
 import re
 from flask import request, jsonify, session, Blueprint
 # from services.supabase_service import upload_file_to_supabase
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 from supabase import create_client
 import os
 import logging
@@ -126,12 +129,21 @@ def handle_upload():
     session['user'] = 'dhruvi@example.com'  # remove in production
     return upload_academic_performance()
 
+<<<<<<< Updated upstream
 # @index_bp.route("/academic-performance", methods=["GET"])
 # def get_academic_performance():
 #     # Dummy session check for demo
 #     session['user'] = 'dhruvi@example.com'  # remove in production
 #     if 'user' not in session:
 #         return jsonify({"error": "Unauthorized"}), 401
+=======
+@index_bp.route("/academic-performance", methods=["GET"])
+def get_academic_performance():
+    # Dummy session check for demo
+    session['user'] = 'dhruvi@example.com'  # remove in production
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+>>>>>>> Stashed changes
 
 #     try:
 #         result = supabase.table("academic_performance_index") \
