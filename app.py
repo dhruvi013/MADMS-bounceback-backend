@@ -10,6 +10,8 @@ from supabase_client import supabase
 from controllers.student_controller import student_bp
 from controllers.enrollment_controller import enrollment_bp
 from controllers.index_controller import index_bp
+from controllers.society_controller import society_bp
+from controllers.magazine_controller import magazine_bp
 import os
 # from controllers.enrollment_controller import upload_admission_docs
 from dotenv import load_dotenv
@@ -37,6 +39,8 @@ CORS(app, resources={
 app.register_blueprint(student_bp)
 app.register_blueprint(enrollment_bp)
 app.register_blueprint(index_bp)
+app.register_blueprint(magazine_bp)
+app.register_blueprint(society_bp) 
 
 # Load configuration
 try:

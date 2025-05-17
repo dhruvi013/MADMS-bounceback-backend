@@ -1,5 +1,5 @@
 import re
-from flask import Flask, request, jsonify, session
+from flask import Flask, app, request, jsonify, session
 from supabase import create_client
 import logging
 from flask import Blueprint
