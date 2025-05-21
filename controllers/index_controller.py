@@ -133,11 +133,18 @@ def handle_upload():
 #         return jsonify({"error": "Unauthorized"}), 401
 @index_bp.route("/academic-performance", methods=["GET"])
 def get_academic_performance():
-    # Dummy session check for demo
-    session['user'] = 'dhruvi@example.com'  # remove in production
+    if not supabase:
+        return jsonify({"error": "Database connection unavailable"}), 503
+
     if 'user' not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
+    try:
+        result = supabase.table("academic_performance_index").select("*").execute()
+        return jsonify(result.data), 200
+    except Exception as e:
+        logger.error(f"Failed to fetch academic performance data: {str(e)}")
+        return jsonify({"error": "Failed to fetch data"}), 500
 #     try:
 #         result = supabase.table("academic_performance_index") \
 #             .select("*") \
@@ -149,3 +156,5 @@ def get_academic_performance():
 #     except Exception as e:
 #         logger.error(f"Error fetching academic performance data: {str(e)}", exc_info=True)
 #         return jsonify({"error": "Server error fetching data"}), 500
+
+

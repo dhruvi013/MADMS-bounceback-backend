@@ -64,3 +64,19 @@ def add_society_event():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@society_bp.route('/api/fetch/societies', methods=['GET'])
+def get_society_events():
+    try:
+        response = supabase.table('society_activities').select('*').execute()
+
+        if hasattr(response, 'error') and response.error:
+            error_msg = getattr(response.error, 'message', str(response.error))
+            return jsonify({"error": error_msg}), 500
+
+        data = response.data
+        return jsonify(data), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

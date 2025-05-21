@@ -69,6 +69,29 @@ def upload_magazine():
     except Exception as e:
         logger.error(f"Error uploading magazine: {str(e)}")
         return jsonify({"error": str(e)}), 500
+    
+
+@magazine_bp.route("/upload-magazine", methods=["GET"])
+def get_magazines():
+    try:
+        # This returns an APIResponse object which contains .data
+        response = supabase.table("magazines").select("*").execute()
+
+        # Just access response.data safely
+        magazines = [
+            {
+                "id": mag.get("id"),
+                "magazineFrontUrl": mag.get("front_page"),
+                "yearPublished": mag.get("publication_year"),
+            }
+            for mag in (response.data or [])
+        ]
+
+        return jsonify(magazines), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching magazines: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 # if __name__ == "__main__":
 #     app.run(debug=True)
