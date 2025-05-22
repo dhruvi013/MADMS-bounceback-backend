@@ -12,6 +12,7 @@ from controllers.enrollment_controller import enrollment_bp
 from controllers.index_controller import index_bp
 from controllers.society_controller import society_bp
 from controllers.magazine_controller import magazine_bp
+from controllers.faculty_controller import faculty_bp
 import os
 # from controllers.enrollment_controller import upload_admission_docs
 from dotenv import load_dotenv
@@ -40,7 +41,8 @@ app.register_blueprint(student_bp)
 app.register_blueprint(enrollment_bp)
 app.register_blueprint(index_bp)
 app.register_blueprint(magazine_bp)
-app.register_blueprint(society_bp) 
+app.register_blueprint(society_bp)
+app.register_blueprint(faculty_bp, url_prefix='/faculty')
 
 # Load configuration
 try:
