@@ -83,11 +83,11 @@ Session(app)
 
 # Hardcoded credentials for testing
 # Allowed emails and single password (for testing)
-ALLOWED_EMAILS = [
-    "dhruviben.patel119539@marwadiuniversity.ac.in",
-    "vidyasinha939@gmail.com",
-    "rajvi.dave119704@marwadiuniversity.ac.in"
-]
+ALLOWED_EMAILS = {
+    "dhruviben.patel119539@marwadiuniversity.ac.in": "admin",
+    "vidyasinha939@gmail.com": "admin",
+    "rajvi.dave119704@marwadiuniversity.ac.in": "user"
+}
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
 
@@ -101,9 +101,12 @@ def login():
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
 
-        if email in [e.strip().lower() for e in ALLOWED_EMAILS] and password == VALID_PASSWORD:
+        if email in ALLOWED_EMAILS and password == VALID_PASSWORD:
             otp = generate_otp()
-            OTP_STORE[email] = otp
+            OTP_STORE[email] = {
+                "otp": otp,
+                "role": ALLOWED_EMAILS[email]
+            }
             send_otp_email(email, otp, mail)
             return jsonify({"message": "OTP sent to email", "email": email}), 200
         else:
@@ -122,19 +125,27 @@ def verify_otp():
         if not email or not otp:
             return jsonify({"error": "Email and OTP are required"}), 400
 
-        if OTP_STORE.get(email) == otp:
+        stored_data = OTP_STORE.get(email)
+        if stored_data and stored_data["otp"] == otp:
+            role = stored_data["role"]
             OTP_STORE.pop(email)
             session['user'] = email
+            session['role'] = role
             session['last_active'] = datetime.utcnow().timestamp()
 
             # Debugging logs
             print("✅ SESSION SET:")
             print("session_user:", session.get("user"))
+            print("session_role:", session.get("role"))
             print("last_active:", session.get("last_active"))
 
             logger.debug(f"Session created: {session}")
 
-            return jsonify({"message": "OTP verified", "success": True}), 200
+            return jsonify({
+                "message": "OTP verified", 
+                "success": True,
+                "role": role
+            }), 200
 
         return jsonify({"error": "Invalid OTP"}), 400
     except Exception as e:
