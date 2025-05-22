@@ -86,7 +86,8 @@ Session(app)
 ALLOWED_EMAILS = {
     "dhruviben.patel119539@marwadiuniversity.ac.in": "admin",
     "vidyasinha939@gmail.com": "admin",
-    "rajvi.dave119704@marwadiuniversity.ac.in": "user"
+    "rajvi.dave119704@marwadiuniversity.ac.in": "admin",
+    "vidyabhartisinha.119390@marwadiuniversity.ac.in": "user"
 }
 VALID_PASSWORD = "1234"
 OTP_STORE = {}
