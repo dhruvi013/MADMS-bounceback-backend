@@ -94,6 +94,24 @@ def upload_admission_docs():
     except Exception as e:
         logger.error(f"Upload failed: {str(e)}")
         return jsonify({"error": str(e)}), 500  # return full error message
+    
+
+@enrollment_bp.route("/upload-documents", methods=["GET"])
+def get_academic_performance():
+    if not supabase:
+        return jsonify({"error": "Database connection unavailable"}), 503
+
+    session['user'] = 'vidyasinha939@gmail.com'  # For demo purposes
+
+    if 'user' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        result = supabase.table("student_admissions").select("*").execute()
+        return jsonify(result.data), 200
+    except Exception as e:
+        logger.error(f"Failed to fetch academic performance data: {str(e)}")
+        return jsonify({"error": "Failed to fetch data"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
