@@ -176,21 +176,48 @@ def dashboard():
 
 @app.before_request
 def session_checker():
-    protected_endpoints = ['dashboard', 'submit_form']
+    # List of endpoints that require authentication (user must be logged in)
+    authenticated_endpoints = [
+        'dashboard',
+        'submit_form', # Assuming submit_form is a protected endpoint
+        'faculty.upload_faculty_data',
+        'faculty.get_faculty_list',
+        'faculty.get_faculty_details',
+        'faculty.update_faculty',
+        'faculty.delete_faculty',
+        # Add other authenticated endpoint names here
+    ]
 
+    # List of endpoints that require admin role
+    admin_endpoints = [
+        'faculty.upload_faculty_data',
+        'faculty.update_faculty',
+        'faculty.delete_faculty',
+        # Add other admin-only endpoint names here
+    ]
+
+    # Skip check for OPTIONS requests
     if request.method == "OPTIONS":
         return
 
-    if request.endpoint in protected_endpoints:
-        if 'user' not in session:
+    # Check if the requested endpoint requires authentication
+    if request.endpoint in authenticated_endpoints:
+        if 'user' not in session or 'role' not in session:
             return jsonify({"error": "Unauthorized, please log in"}), 401
 
+        # Check session expiry
         last_active = session.get('last_active')
-        if last_active and (datetime.utcnow().timestamp() - last_active > 1800):  # 30 mins
+        if last_active and (datetime.utcnow().timestamp() - last_active > 1800):  # 30 mins expiry
             session.clear()
             return jsonify({"error": "Session expired, please log in again"}), 401
 
+        # Update last active time
         session['last_active'] = datetime.utcnow().timestamp()
+
+        # Check if the requested endpoint requires admin role
+        if request.endpoint in admin_endpoints:
+            if session.get('role') != 'admin':
+                return jsonify({"error": "Forbidden, requires admin privileges"}), 403
 
 
 if __name__ == "__main__":
