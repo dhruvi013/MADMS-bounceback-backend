@@ -29,7 +29,7 @@ app = Flask(__name__)
 # Configure CORS
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:8080", "https://madms-assistant.vercel.app"],
+        "origins": ["http://localhost:8080", "https://accredit-assisstant.vercel.app"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type"],
         "supports_credentials": True
