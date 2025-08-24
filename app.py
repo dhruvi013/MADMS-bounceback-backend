@@ -6,7 +6,7 @@ from config import Config
 from otp_service import generate_otp, send_otp_email
 from datetime import timedelta, datetime
 import logging
-from supabase_client import supabase
+from supabase_client import SUPABASE_KEY, SUPABASE_URL, supabase
 from controllers.student_controller import student_bp
 from controllers.enrollment_controller import enrollment_bp
 from controllers.index_controller import index_bp
@@ -14,11 +14,16 @@ from controllers.society_controller import society_bp
 from controllers.magazine_controller import magazine_bp
 from controllers.faculty_controller import faculty_bp
 import os
+from supabase import create_client
 # from controllers.enrollment_controller import upload_admission_docs
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -69,8 +74,8 @@ app.config['SECRET_KEY'] = 'your_generated_secret_key'  # Must not be None
 app.config['SESSION_TYPE'] = 'filesystem'  # Store session in server filesystem
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Crucial for localhost
-app.config['SESSION_COOKIE_SECURE'] = True    # False because not using HTTPS locally
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Crucial for localhost
+app.config['SESSION_COOKIE_SECURE'] = False    # False because not using HTTPS locally
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
@@ -157,6 +162,25 @@ def verify_otp():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/auth/google-login", methods=["POST"])
+def google_login():
+    data = request.json
+    access_token = data.get("access_token")
+
+    if not access_token:
+        return jsonify({"error": "No token provided"}), 400
+
+    # Use the service role key to verify token and get user info
+    try:
+        user_info = supabase_admin.auth.get_user(access_token)
+    except Exception as e:
+        return jsonify({"error": "Invalid token"}), 401
+
+    session['user'] = user_info['email']
+    session['role'] = 'user'
+    session['last_active'] = datetime.utcnow().timestamp()
+
+    return jsonify({"message": "Logged in via Google"}), 200
 
 @app.route("/auth/logout", methods=["POST"])
 def logout():
