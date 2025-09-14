@@ -6,32 +6,31 @@ from config import Config
 from otp_service import generate_otp, send_otp_email
 from datetime import timedelta, datetime
 import logging
-from supabase_client import SUPABASE_KEY, SUPABASE_URL, supabase
+from supabase_client import SUPABASE_KEY, SUPABASE_URL
 from controllers.student_controller import student_bp
 from controllers.enrollment_controller import enrollment_bp
 from controllers.index_controller import index_bp
 from controllers.society_controller import society_bp
 from controllers.magazine_controller import magazine_bp
 from controllers.faculty_controller import faculty_bp
+from controllers.faculty_qualifiction_controller import faculty_qualification_bp
 import os
 from supabase import create_client
-# from controllers.enrollment_controller import upload_admission_docs
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-
+# Supabase admin client
 supabase_admin = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
-# Configure logging
+# Logging setup
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Configure CORS
+# ✅ CORS configuration
 CORS(app, resources={
     r"/*": {
         "origins": ["http://localhost:8080", "https://accredit-assisstant.vercel.app"],
@@ -41,15 +40,16 @@ CORS(app, resources={
     }
 })
 
-# Register the controller (Blueprint)
+# ✅ Register controllers
 app.register_blueprint(student_bp)
 app.register_blueprint(enrollment_bp)
 app.register_blueprint(index_bp)
 app.register_blueprint(magazine_bp)
 app.register_blueprint(society_bp)
 app.register_blueprint(faculty_bp, url_prefix='/faculty')
+app.register_blueprint(faculty_qualification_bp)
 
-# Load configuration
+# ✅ Load config
 try:
     app.config.from_object(Config)
     logger.info("Configuration loaded successfully")
@@ -57,39 +57,31 @@ except Exception as e:
     logger.error(f"Error loading configuration: {str(e)}")
     raise
 
-# Secret key required for sessions
+# ✅ Session secret key (fallback for local dev)
 if not app.config.get("SECRET_KEY"):
-    app.config["SECRET_KEY"] = "super-secret-key"  # fallback, not for prod
+    app.config["SECRET_KEY"] = "super-secret-key"
 
-# Initialize Mail
+# ✅ Flask-Mail setup
 try:
     mail = Mail(app)
-    logger.info("Mail extension initialized successfully")
+    logger.info("Mail initialized successfully")
 except Exception as e:
-    logger.error(f"Error initializing mail: {str(e)}")
+    logger.error(f"Mail initialization error: {str(e)}")
     raise
 
-# ✅ Flask Session Configuration (fixed)
-app.config['SECRET_KEY'] = 'your_generated_secret_key'  # Must not be None
-app.config['SESSION_TYPE'] = 'filesystem'  # Store session in server filesystem
+# ✅ Flask Session Configuration
+app.config['SECRET_KEY'] = 'your_generated_secret_key'
+app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Crucial for localhost
-app.config['SESSION_COOKIE_SECURE'] = False    # False because not using HTTPS locally
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'   # Local dev
+app.config['SESSION_COOKIE_SECURE'] = False     # Local dev
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 
-# # ✅ Correct CORS setup
-# CORS(app, supports_credentials=True, origins=[
-#     # "http://localhost:8080",  # Local development
-#     # "https://madms-bounceback.vercel.app"  # Production Vercel domain
-#     "*"
-# ])
-
 Session(app)
 
-# Hardcoded credentials for testing
-# Allowed emails and single password (for testing)
+# ✅ Hardcoded users (testing only)
 ALLOWED_EMAILS = {
     "dhruviben.patel119539@marwadiuniversity.ac.in": "admin",
     "vidyasinha939@gmail.com": "admin",
@@ -98,10 +90,14 @@ ALLOWED_EMAILS = {
     "rajvi.dave119704@marwadiuniversity.ac.in": "user"
 }
 VALID_PASSWORD = "1234"
+
+# ✅ OTP Store (with expiry)
 OTP_STORE = {}
 
+# ========================= AUTH ROUTES =========================
+
 @app.route("/auth/login", methods=["POST"])
-def login():    
+def login():
     try:
         data = request.json
         email = data.get("email", "").strip().lower()
@@ -114,7 +110,8 @@ def login():
             otp = generate_otp()
             OTP_STORE[email] = {
                 "otp": otp,
-                "role": ALLOWED_EMAILS[email]
+                "role": ALLOWED_EMAILS[email],
+                "expires_at": datetime.utcnow() + timedelta(minutes=5)  # OTP expires in 5 mins
             }
             send_otp_email(email, otp, mail)
             return jsonify({"message": "OTP sent to email", "email": email}), 200
@@ -123,6 +120,7 @@ def login():
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/auth/verify-otp", methods=["POST"])
 def verify_otp():
@@ -135,26 +133,27 @@ def verify_otp():
             return jsonify({"error": "Email and OTP are required"}), 400
 
         stored_data = OTP_STORE.get(email)
-        if stored_data and stored_data["otp"] == otp:
-            role = stored_data["role"]
-            OTP_STORE.pop(email)
-            session['user'] = email
-            session['role'] = role
-            session['last_active'] = datetime.utcnow().timestamp()
+        if stored_data:
+            # ✅ Check OTP expiry
+            if datetime.utcnow() > stored_data["expires_at"]:
+                OTP_STORE.pop(email)
+                return jsonify({"error": "OTP expired, please login again"}), 400
 
-            # Debugging logs
-            print("✅ SESSION SET:")
-            print("session_user:", session.get("user"))
-            print("session_role:", session.get("role"))
-            print("last_active:", session.get("last_active"))
+            if stored_data["otp"] == otp:
+                role = stored_data["role"]
+                OTP_STORE.pop(email)
 
-            logger.debug(f"Session created: {session}")
+                session['user'] = email
+                session['role'] = role
+                session['last_active'] = datetime.utcnow().timestamp()
 
-            return jsonify({
-                "message": "OTP verified", 
-                "success": True,
-                "role": role
-            }), 200
+                logger.debug(f"Session created for {email} with role {role}")
+
+                return jsonify({
+                    "message": "OTP verified",
+                    "success": True,
+                    "role": role
+                }), 200
 
         return jsonify({"error": "Invalid OTP"}), 400
     except Exception as e:
@@ -170,87 +169,86 @@ def google_login():
     if not access_token:
         return jsonify({"error": "No token provided"}), 400
 
-    # Use the service role key to verify token and get user info
     try:
         user_info = supabase_admin.auth.get_user(access_token)
+        email = user_info.user.email  # ✅ Correct way
     except Exception as e:
+        logger.error(f"Google login error: {str(e)}")
         return jsonify({"error": "Invalid token"}), 401
 
-    session['user'] = user_info['email']
+    session['user'] = email
     session['role'] = 'user'
     session['last_active'] = datetime.utcnow().timestamp()
 
-    return jsonify({"message": "Logged in via Google"}), 200
+    return jsonify({"message": "Logged in via Google", "email": email}), 200
+
 
 @app.route("/auth/logout", methods=["POST"])
 def logout():
     session.clear()
     return jsonify({"message": "Logged out successfully"}), 200
 
+# ========================= PROTECTED ROUTES =========================
 
-
-
-# ✅ Dashboard Route (test auth)
 @app.route("/dashboard", methods=["GET"])
 def dashboard():
     if 'user' not in session:
         return jsonify({"error": "Unauthorized"}), 401
-
     return jsonify({"message": f"Welcome, {session['user']}!"}), 200
 
+# ========================= SESSION CHECKER =========================
 
 @app.before_request
 def session_checker():
-    # List of endpoints that require authentication (user must be logged in)
     authenticated_endpoints = [
         'dashboard',
-        'submit_form', # Assuming submit_form is a protected endpoint
+        'submit_form',
         'faculty.upload_faculty_data',
         'faculty.get_faculty_list',
         'faculty.get_faculty_details',
         'faculty.update_faculty',
         'faculty.delete_faculty',
-        # Add other authenticated endpoint names here
-    ]
+        'faculty.upload_faculty',
+        "faculty.list_faculty",
+        "faculty.delete_faculty",
+        "/upload",
+        "/faculty",
+        'faculty_qualification_bp.add_faculty_qualification',
+        'faculty_qualification_bp.get_faculty_qualification',    ]
 
-    # List of endpoints that require admin role
     admin_endpoints = [
         'faculty.upload_faculty_data',
         'faculty.update_faculty',
         'faculty.delete_faculty',
-        # Add other admin-only endpoint names here
     ]
 
-    # Skip check for OPTIONS requests
     if request.method == "OPTIONS":
         return
 
-    # Check if the requested endpoint requires authentication
     if request.endpoint in authenticated_endpoints:
         if 'user' not in session or 'role' not in session:
             return jsonify({"error": "Unauthorized, please log in"}), 401
 
-        # Check session expiry
         last_active = session.get('last_active')
-        if last_active and (datetime.utcnow().timestamp() - last_active > 1800):  # 30 mins expiry
+        if last_active and (datetime.utcnow().timestamp() - last_active > 1800):
             session.clear()
             return jsonify({"error": "Session expired, please log in again"}), 401
 
-        # Update last active time
         session['last_active'] = datetime.utcnow().timestamp()
 
-        # Check if the requested endpoint requires admin role
         if request.endpoint in admin_endpoints:
             if session.get('role') != 'admin':
                 return jsonify({"error": "Forbidden, requires admin privileges"}), 403
 
+# ========================= APP START =========================
 
 if __name__ == "__main__":
-    # Development will be the default when running locally
     env = os.environ.get("FLASK_ENV", "development")
 
     if env == "development":
         app.run(host="localhost", port=5000, debug=True)
     else:
         port = int(os.environ.get("PORT", 10000))
+        app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+        app.config['SESSION_COOKIE_SECURE'] = True
         app.run(host="0.0.0.0", port=port)
