@@ -15,6 +15,7 @@ from controllers.magazine_controller import magazine_bp
 from controllers.faculty_controller import faculty_bp
 from controllers.faculty_qualifiction_controller import faculty_qualification_bp
 from controllers.academic_reasearch_controller import academic_research_bp
+from controllers.sponsored_reasearch_controller import sponsored_research_bp
 import os
 from supabase import create_client
 from dotenv import load_dotenv
@@ -50,6 +51,8 @@ app.register_blueprint(society_bp)
 app.register_blueprint(faculty_bp, url_prefix='/faculty')
 app.register_blueprint(faculty_qualification_bp)
 app.register_blueprint(academic_research_bp)
+app.register_blueprint(sponsored_research_bp)
+
 
 # ✅ Load config
 try:
@@ -218,7 +221,10 @@ def session_checker():
         'faculty_qualification_bp.add_faculty_qualification',
         'faculty_qualification_bp.get_faculty_qualification',   
         "academic_research_bp.add_academic_research",
-        "academic_research_bp.get_academic_research", ]
+        "academic_research_bp.get_academic_research",
+        "sponsored_research_bp.add_sponsored_research",   # ✅ New POST route
+        "sponsored_research_bp.get_sponsored_research",   # ✅ New GET route
+        ]
 
     admin_endpoints = [
         'faculty.upload_faculty_data',
