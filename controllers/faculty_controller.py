@@ -19,13 +19,13 @@ def upload_faculty():
 
     db = SessionLocal()
     try:
-        # ✅ Expect file in FormData
+        # o Expect file in FormData
         if "file" not in request.files:
             return jsonify({"error": "No file uploaded"}), 400
 
         file = request.files["file"]
 
-        # ✅ Use pandas to read Excel file
+        # o Use pandas to read Excel file
         df = pd.read_excel(file)
 
         required_columns = ["name"]

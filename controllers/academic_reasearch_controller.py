@@ -49,7 +49,7 @@ def get_academic_research():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # ✅ Correct table name
+        # o Correct table name
         result = supabase.table("academic_reasearch").select("*").execute()
         return jsonify(result.data if result.data else []), 200
     except Exception as e:

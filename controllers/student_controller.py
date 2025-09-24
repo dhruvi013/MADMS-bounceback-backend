@@ -89,7 +89,7 @@ def submit_form():
 #             # Name queries are ignored as per your new requirement
 #             results = []
 
-#         print(f"✅ Found {len(results)} enrollment numbers")
+#         print(f"o Found {len(results)} enrollment numbers")
 #         enrollment_list = [{'enrollment_number': r.enrollment_number} for r in results]
 #         return jsonify(enrollment_list), 200
 #     except Exception as e:

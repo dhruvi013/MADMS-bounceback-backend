@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# ✅ CORS configuration
+# CORS configuration
 CORS(app, resources={
     r"/*": {
         "origins": ["http://localhost:8080", "https://accredit-assisstant.vercel.app"],
@@ -42,7 +42,7 @@ CORS(app, resources={
     }
 })
 
-# ✅ Register controllers
+#  Register controllers
 app.register_blueprint(student_bp)
 app.register_blueprint(enrollment_bp)
 app.register_blueprint(index_bp)
@@ -54,7 +54,7 @@ app.register_blueprint(academic_research_bp)
 app.register_blueprint(sponsored_research_bp)
 
 
-# ✅ Load config
+# Load config
 try:
     app.config.from_object(Config)
     logger.info("Configuration loaded successfully")
@@ -62,11 +62,11 @@ except Exception as e:
     logger.error(f"Error loading configuration: {str(e)}")
     raise
 
-# ✅ Session secret key (fallback for local dev)
+# Session secret key (fallback for local dev)
 if not app.config.get("SECRET_KEY"):
     app.config["SECRET_KEY"] = "super-secret-key"
 
-# ✅ Flask-Mail setup
+# o Flask-Mail setup
 try:
     mail = Mail(app)
     logger.info("Mail initialized successfully")
@@ -74,7 +74,7 @@ except Exception as e:
     logger.error(f"Mail initialization error: {str(e)}")
     raise
 
-# ✅ Flask Session Configuration
+# o Flask Session Configuration
 app.config['SECRET_KEY'] = 'your_generated_secret_key'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
@@ -86,7 +86,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 Session(app)
 
-# ✅ Hardcoded users (testing only)
+# o Hardcoded users (testing only)
 ALLOWED_EMAILS = {
     "dhruviben.patel119539@marwadiuniversity.ac.in": "admin",
     "vidyasinha939@gmail.com": "admin",
@@ -96,7 +96,7 @@ ALLOWED_EMAILS = {
 }
 VALID_PASSWORD = "1234"
 
-# ✅ OTP Store (with expiry)
+# o OTP Store (with expiry)
 OTP_STORE = {}
 
 # ========================= AUTH ROUTES =========================
@@ -139,7 +139,7 @@ def verify_otp():
 
         stored_data = OTP_STORE.get(email)
         if stored_data:
-            # ✅ Check OTP expiry
+            # o Check OTP expiry
             if datetime.utcnow() > stored_data["expires_at"]:
                 OTP_STORE.pop(email)
                 return jsonify({"error": "OTP expired, please login again"}), 400
@@ -176,7 +176,7 @@ def google_login():
 
     try:
         user_info = supabase_admin.auth.get_user(access_token)
-        email = user_info.user.email  # ✅ Correct way
+        email = user_info.user.email  # o Correct way
     except Exception as e:
         logger.error(f"Google login error: {str(e)}")
         return jsonify({"error": "Invalid token"}), 401
@@ -222,8 +222,8 @@ def session_checker():
         'faculty_qualification_bp.get_faculty_qualification',   
         "academic_research_bp.add_academic_research",
         "academic_research_bp.get_academic_research",
-        "sponsored_research_bp.add_sponsored_research",   # ✅ New POST route
-        "sponsored_research_bp.get_sponsored_research",   # ✅ New GET route
+        "sponsored_research_bp.add_sponsored_research",   # o New POST route
+        "sponsored_research_bp.get_sponsored_research",   # o New GET route
         ]
 
     admin_endpoints = [
